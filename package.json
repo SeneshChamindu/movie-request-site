@@ -1,31 +1,35 @@
 {
-  "name": "test-md",
-  "version": "1.0.0",
+  "name": "zesr-movie-bot",
+  "version": "1.1.0",
   "type": "module",
-  "description": "WhatsApp Bot with Multi-Number Support",
+  "description": "ZESR WhatsApp Movie Bot with Multi-Number Support",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch index.js",
+    "check": "node --check index.js && node --check pair.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "v7.0.0-rc14",
-    "express": "^4.18.2",
-    "mongoose": "^8.16.0",
+    "@whiskeysockets/baileys": "7.0.0-rc.14",
     "axios": "^1.6.0",
-     "sharp": "^0.34.5",
-    "moment-timezone": "^0.5.45",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "fs-extra": "^11.2.0",
-    "dotenv": "^16.3.1"
+    "moment-timezone": "^0.5.45",
+    "mongoose": "^8.16.0",
+    "sharp": "^0.34.5"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "keywords": [
+    "zesr",
     "whatsapp",
-    "bot",
+    "movie-bot",
+    "baileys",
     "multi-device",
-    "baileys"
+    "multi-number"
   ],
+  "author": "Senesh Chamindu",
   "license": "MIT"
 }
