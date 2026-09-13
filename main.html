@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🧪 Test Pair Code</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+    <div style="max-width:450px;margin:40px auto;padding:30px;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);font-family:Arial,sans-serif;text-align:center;">
+        <div style="margin-bottom:30px;">
+            <div style="font-size:48px;">🧪</div>
+            <h1 style="font-size:26px;font-weight:700;color:#1a1a2e;margin:10px 0 4px;">Test Pair</h1>
+            <p style="color:#888;font-size:14px;margin:0;"><i class="fas fa-phone"></i> Enter number to get pairing code</p>
+        </div>
+        <div style="margin-bottom:20px;text-align:left;">
+            <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">
+                <i class="fas fa-phone" style="color:#059669;"></i> Phone Number
+            </label>
+            <div style="display:flex;align-items:center;border:2px solid #e5e7eb;border-radius:12px;padding:4px 4px 4px 16px;background:#f9fafb;">
+                <span style="font-weight:600;color:#6b7280;padding-right:10px;border-right:1px solid #e5e7eb;">+94</span>
+                <input type="tel" id="phoneInput" placeholder="76 806 9800" maxlength="10"
+                    style="flex:1;border:none;outline:none;padding:14px 12px;font-size:16px;background:transparent;font-family:Arial,sans-serif;" />
+                <button id="clearBtn" onclick="clearInput()"
+                    style="background:#f3f4f6;border:none;border-radius:50%;width:36px;height:36px;color:#9ca3af;cursor:pointer;display:none;font-size:14px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <button id="pairBtn" onclick="getPairCode()"
+            style="width:100%;padding:16px;border:none;border-radius:12px;background:#059669;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s ease;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;">
+            <span id="loader" style="display:none;border:2px solid rgba(255,255,255,0.2);border-top:2px solid #fff;border-radius:50%;width:20px;height:20px;animation:spin 0.8s linear infinite;"></span>
+            <span id="btnText"><i class="fas fa-link"></i> Get Pair Code</span>
+        </button>
+
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            #pairBtn:hover { background:#047857; transform:translateY(-2px); }
+            #pairBtn:active { transform:scale(0.97); }
+            #pairBtn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+        </style>
+        <div id="responseBox" style="display:none;margin-top:20px;padding:18px 20px;border-radius:12px;background:#f9fafb;border:1px solid #e5e7eb;text-align:left;">
+
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="font-size:28px;width:44px;height:44px;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="rIcon">🧪</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;" id="rTitle">Pairing Code</div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <div style="font-size:26px;font-weight:700;color:#1a1a2e;font-family:'Courier New',monospace;letter-spacing:2px;word-break:break-all;" id="rCode">—</div>
+                        <button id="copyBtn" onclick="copyCode()"
+                            style="display:none;background:#f3f4f6;border:none;border-radius:8px;padding:6px 14px;color:#6b7280;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.3s;font-family:Arial,sans-serif;">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div style="font-size:13px;color:#9ca3af;margin-top:2px;" id="rMessage">Enter code in WhatsApp</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:24px;padding-top:16px;border-top:1px solid #f3f4f6;">
+            <div style="font-size:14px;font-weight:600;color:#1a1a2e;">
+                🧪 Test MD Bot
+            </div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+                <i class="fas fa-flask"></i> Powered by Lakiya <i class="fas fa-circle" style="font-size:6px;vertical-align:middle;"></i> v2.0
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const phoneInput = document.getElementById('phoneInput');
+        const pairBtn = document.getElementById('pairBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loader = document.getElementById('loader');
+        const btnText = document.getElementById('btnText');
+        const responseBox = document.getElementById('responseBox');
+        const rIcon = document.getElementById('rIcon');
+        const rTitle = document.getElementById('rTitle');
+        const rCode = document.getElementById('rCode');
+        const rMessage = document.getElementById('rMessage');
+        const copyBtn = document.getElementById('copyBtn');
+
+        function clearInput() {
+            phoneInput.value = '';
+            phoneInput.focus();
+            clearBtn.style.display = 'none';
+        }
+
+        phoneInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+            clearBtn.style.display = this.value.length > 0 ? 'block' : 'none';
+        });
+
+        phoneInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') getPairCode();
+        });
+
+        window.addEventListener('load', () => phoneInput.focus());
+
+        function showResponse(icon, title, code, message, isError = false) {
+            responseBox.style.display = 'block';
+            rIcon.textContent = icon;
+            rTitle.textContent = title;
+            rCode.textContent = code;
+            rCode.style.color = isError ? '#dc2626' : '#1a1a2e';
+            rCode.style.fontSize = isError ? '14px' : '26px';
+            rCode.style.fontFamily = isError ? 'Arial, sans-serif' : "'Courier New', monospace";
+            rMessage.textContent = message;
+            copyBtn.style.display = (isError || code === '—' || code === 'Enter a number!') ? 'none' : 'inline-flex';
+        }
+        function copyCode() {
+            const code = rCode.textContent;
+            if (!code || code === '—') return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy', 2000);
+                }).catch(() => fallbackCopy(code));
+            } else {
+                fallbackCopy(code);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy', 2000);
+        }
+
+        async function getPairCode() {
+            const phone = phoneInput.value.trim();
+
+            if (!phone) {
+                showResponse('⚠️', 'Error', 'Enter a number!', 'Please enter your phone number', true);
+                phoneInput.focus();
+                return;
+            }
+
+            if (phone.length < 9) {
+                showResponse('⚠️', 'Error', 'Too short!', 'Must be at least 9 digits', true);
+                return;
+            }
+
+            const fullNumber = `94${phone}`;
+
+
+            pairBtn.disabled = true;
+            loader.style.display = 'block';
+            btnText.innerHTML = '';
+
+            showResponse('⏳', 'Generating', '—', 'Requesting pairing code...', false);
+
+            try {
+                const response = await fetch(`/code?number=${fullNumber}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.code) {
+                    showResponse('🧪', 'Pairing Code ✅', data.code, 'Click Copy to copy the code', false);
+                } else {
+                    showResponse('❌', 'Failed', data.error || data.message || 'Unknown error', 'Please try again', true);
+                }
+
+            } catch (error) {
+                showResponse('❌', 'Network Error', 'Connection failed!', 'Make sure the bot is running', true);
+            } finally {
+                pairBtn.disabled = false;
+                loader.style.display = 'none';
+                btnText.innerHTML = '<i class="fas fa-link"></i> Get Pair Code';
+            }
+        }
+    </script>
+
+</body>
+</html>
