@@ -10,7 +10,7 @@
     "check": "node --check index.js && node --check pair.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "7.0.0-rc.14",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
     "axios": "^1.6.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
