@@ -38,7 +38,7 @@ const config = {
     API_CINESUBZ_URL:'https://api-siteh-22e22e4cb068.herokuapp.com',
     API_MOVIE_URL: 'https://api-siteh-22e22e4cb068.herokuapp.com',
     API_KEY:'lakiya_72b96b423d046110b5947b625e05ecf2007e009f5ba61d1c4f9a4547fb983e8b',
-    BOT_IMAGE:'https://i.ibb.co/G327RvSY/872cf2fd-1fda-4f17-ba72-4460191c656e.png',
+    BOT_IMAGE:'https://cloud.laksidu.site/dl/ekd2TaS5eS/IMG_20251127_192734_723.webp',
     BOT_FOOTER:"Zᴇꜱʀ ✘ 〽️ᴏᴠɪᴇ Bᴏᴛ ᴠ1.1",
     MGROUP_LINK: 'https://whatsapp.com/channel/0029VbBEDft3AzNTaN02u739',
     MOVIE_FOOTER:"⏤͟͟͞͞★❮ Sᴇɴᴇ Oꜰᴄ 〽️ᴏᴠɪᴇꜱ ⏤͟͟͞͞★",
