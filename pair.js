@@ -186,6 +186,33 @@ async function setupCommandHandlers(socket, number) {
 
         const userJid = jidNormalizedUser(socket.user.id);
         const from = msg.key.remoteJid;
+const sender = from;
+
+// 🌐 AUTO REACT TO CHANNEL MESSAGES
+try {
+    const remoteJid = msg.key.remoteJid || '';
+
+    if (
+        remoteJid.endsWith('@newsletter') &&
+        !msg.message?.reactionMessage
+    ) {
+        const emojis = ['❤️', '💚', '💙', '💜', '🧡'];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        await socket.sendMessage(remoteJid, {
+            react: {
+                text: emoji,
+                key: msg.key
+            }
+        });
+
+        console.log(`✅ Channel reacted: ${emoji}`);
+    }
+} catch (err) {
+    console.error('❌ Channel auto react error:', err?.message || err);
+}
+
+const isGroup = String(from || '').endsWith('@g.us');
         const sender = from;
         const isGroup = String(from || '').endsWith('@g.us');
 
