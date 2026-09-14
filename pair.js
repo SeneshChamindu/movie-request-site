@@ -64,23 +64,28 @@ const SessionSchema = new mongoose.Schema({
 const Session = mongoose.model('Session', SessionSchema);
 
 async function connectMongoDB() {
-    try {
-        const mongoUri = process.env.MONGO_URI;
-        await mongoose.connect(mongoUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
-        console.log(`
-╔══════════════════════════════════════╗
-║  ✅ MongoDB Connected Successfully   ║
-║  ⚡ System Status : ONLINE           ║
-╚══════════════════════════════════════╝
-`);
-    } catch (error) {
-        console.error('MongoDB connection failed:', error);
-        process.exit(1);
+  try {
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      console.error('❌ MONGO_URI is missing');
+      return;
     }
+
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000
+    });
+
+    console.log('✅ MongoDB Connected Successfully');
+
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+
+    setTimeout(connectMongoDB, 10000);
+  }
 }
+
 connectMongoDB();
 if (!fs.existsSync(SESSION_BASE_PATH)) {
     fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
