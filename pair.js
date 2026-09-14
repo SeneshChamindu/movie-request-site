@@ -187,7 +187,7 @@ async function setupCommandHandlers(socket, number) {
         const userJid = jidNormalizedUser(socket.user.id);
         const from = msg.key.remoteJid;
 const sender = from;
-
+const isGroup = String(from || '').endsWith('@g.us');
 
         const isGroup = String(from || '').endsWith('@g.us');
 const sender = from;
