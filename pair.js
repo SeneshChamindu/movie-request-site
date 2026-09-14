@@ -22,28 +22,31 @@ import {
     jidNormalizedUser,
     isPnUser
 } from '@whiskeysockets/baileys';
+
 export const router = express.Router();
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const insecureAgent = new https.Agent({
     rejectUnauthorized: false
 });
+
 const config = {
     AUTO_RECORDING: 'false',
     AUTO_TYPING: 'false',
     AUTO_REACT: 'false',
     READ_CMD: 'false',
     API_MAIN_URL: 'https://api-siteh-22e22e4cb068.herokuapp.com',
-    API_MAIN_URL2:'https://api.laksidu.site',
-    API_CINESUBZ_URL:'https://api-siteh-22e22e4cb068.herokuapp.com',
+    API_MAIN_URL2: 'https://api.laksidu.site',
+    API_CINESUBZ_URL: 'https://api-siteh-22e22e4cb068.herokuapp.com',
     API_MOVIE_URL: 'https://api-siteh-22e22e4cb068.herokuapp.com',
-    API_KEY:'lakiya_72b96b423d046110b5947b625e05ecf2007e009f5ba61d1c4f9a4547fb983e8b',
-    BOT_IMAGE:'https://cloud.laksidu.site/dl/ekd2TaS5eS/IMG_20251127_192734_723.webp',
-    BOT_FOOTER:"Sᴇɴᴇ-Mɪɴɪ 🥷 Bᴏᴛ",
+    API_KEY: 'lakiya_72b96b423d046110b5947b625e05ecf2007e009f5ba61d1c4f9a4547fb983e8b',
+    BOT_IMAGE: 'https://cloud.laksidu.site/dl/ekd2TaS5eS/IMG_20251127_192734_723.webp',
+    BOT_FOOTER: "Sᴇɴᴇ-Mɪɴɪ 🥷 Bᴏᴛ",
     MGROUP_LINK: 'https://whatsapp.com/channel/0029VbBEDft3AzNTaN02u739',
-    MOVIE_FOOTER:"⏤͟͟͞͞★❮ Sᴇɴᴇ Oꜰᴄ 〽️ᴏᴠɪᴇꜱ ❯★͟͟͞͞⏤",
+    MOVIE_FOOTER: "⏤͟͟͞͞★❮ Sᴇɴᴇ Oꜰᴄ 〽️ᴏᴠɪᴇꜱ ❯★͟͟͞͞⏤",
     PREFIX: '.',
-    OWNER_NUMBERS: ['94761393578','94775862392'],
+    OWNER_NUMBERS: ['94761393578', '94775862392'],
     CREATOR_NUMBER: '94775862392',
     BOT_NAME: "Sᴇɴᴇ-Mɪɴɪ 🥷 Bᴏᴛ",
     AIR_FOOTER: "Sᴇɴᴇ-Mɪɴɪ Bᴏᴛ ᴠ1.0.0",
@@ -53,254 +56,789 @@ const config = {
 
 const activeSockets = new Map();
 const socketCreationTime = new Map();
+
 const SESSION_BASE_PATH = './session';
 const NUMBER_LIST_PATH = './numbers.json';
+
 const SessionSchema = new mongoose.Schema({
-    number: { type: String, unique: true, required: true },
-    creds: { type: Object, required: true },
-    config: { type: Object },
-    updatedAt: { type: Date, default: Date.now }
+    number: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    creds: {
+        type: Object,
+        required: true
+    },
+    config: {
+        type: Object
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
 });
+
 const Session = mongoose.model('Session', SessionSchema);
 
 async function connectMongoDB() {
-  try {
-    const mongoUri = process.env.MONGO_URI;
+    try {
+        const mongoUri = process.env.MONGO_URI;
 
-    if (!mongoUri) {
-      console.error('❌ MONGO_URI is missing');
-      return;
+        if (!mongoUri) {
+            console.error('❌ MONGO_URI is missing');
+            return;
+        }
+
+        await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 15000,
+            connectTimeoutMS: 15000
+        });
+
+        console.log('✅ MongoDB Connected Successfully');
+
+    } catch (error) {
+        console.error(
+            '❌ MongoDB connection failed:',
+            error.message
+        );
+
+        setTimeout(connectMongoDB, 10000);
     }
-
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 15000,
-      connectTimeoutMS: 15000
-    });
-
-    console.log('✅ MongoDB Connected Successfully');
-
-  } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
-
-    setTimeout(connectMongoDB, 10000);
-  }
 }
 
 connectMongoDB();
+
 if (!fs.existsSync(SESSION_BASE_PATH)) {
-    fs.mkdirSync(SESSION_BASE_PATH, { recursive: true });
+    fs.mkdirSync(SESSION_BASE_PATH, {
+        recursive: true
+    });
 }
 
 function initialize() {
     activeSockets.clear();
     socketCreationTime.clear();
-    console.log('Cleared active sockets and creation times on startup');
+
+    console.log(
+        'Cleared active sockets and creation times on startup'
+    );
 }
+
 async function autoReconnectOnStartup() {
     try {
         let numbers = [];
+
         if (fs.existsSync(NUMBER_LIST_PATH)) {
-            numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
-            console.log(`Loaded ${(numbers.length)} numbers from numbers.json`);
+            numbers = JSON.parse(
+                fs.readFileSync(NUMBER_LIST_PATH, 'utf8')
+            );
+
+            console.log(
+                `Loaded ${numbers.length} numbers from numbers.json`
+            );
         } else {
-            console.warn('No numbers.json found, checking MongoDB for sessions...');
+            console.warn(
+                'No numbers.json found, checking MongoDB for sessions...'
+            );
         }
 
-        const sessions = await Session.find({}, 'number').lean();
-        const mongoNumbers = sessions.map(s => s.number);
-        console.log(`Found ${mongoNumbers.length} numbers in MongoDB sessions`);
+        const sessions = await Session.find(
+            {},
+            'number'
+        ).lean();
 
-        numbers = [...new Set([...numbers, ...mongoNumbers])];
+        const mongoNumbers = sessions.map(
+            s => s.number
+        );
+
+        console.log(
+            `Found ${mongoNumbers.length} numbers in MongoDB sessions`
+        );
+
+        numbers = [
+            ...new Set([
+                ...numbers,
+                ...mongoNumbers
+            ])
+        ];
+
         if (numbers.length === 0) {
-            console.log('No numbers found in numbers.json or MongoDB, skipping auto-reconnect');
+            console.log(
+                'No numbers found in numbers.json or MongoDB, skipping auto-reconnect'
+            );
             return;
         }
 
-        console.log(`Attempting to reconnect ${numbers.length} sessions...`);
+        console.log(
+            `Attempting to reconnect ${numbers.length} sessions...`
+        );
+
         for (const number of numbers) {
             if (activeSockets.has(number)) {
-                console.log(`Number ${number} already connected, skipping`);
+                console.log(
+                    `Number ${number} already connected, skipping`
+                );
                 continue;
             }
-            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
+
+            const mockRes = {
+                headersSent: false,
+                send: () => {},
+                status: () => mockRes
+            };
+
             try {
                 await EmpirePair(number, mockRes);
-                console.log(`Initiated reconnect for ${number}`);
+
+                console.log(
+                    `Initiated reconnect for ${number}`
+                );
             } catch (error) {
-                console.error(`Failed to reconnect ${number}:`, error);
+                console.error(
+                    `Failed to reconnect ${number}:`,
+                    error
+                );
             }
+
             await delay(1000);
         }
+
     } catch (error) {
-        console.error('Auto-reconnect on startup failed:', error);
+        console.error(
+            'Auto-reconnect on startup failed:',
+            error
+        );
     }
 }
 
 initialize();
-setTimeout(autoReconnectOnStartup, 5000);
-function formatMessage(title, content, footer) {
+
+setTimeout(
+    autoReconnectOnStartup,
+    5000
+);
+
+function formatMessage(
+    title,
+    content,
+    footer
+) {
     return `*${title}*\n\n${content}\n\n> *${footer}*`;
 }
+
 function getSriLankaTimestamp() {
-    return moment().tz('Asia/Colombo').format('YYYY-MM-DD HH:mm:ss');
+    return moment()
+        .tz('Asia/Colombo')
+        .format('YYYY-MM-DD HH:mm:ss');
 }
+
 async function downloadContent(message) {
-    if (!message) throw new Error('No message content');
-    const buffer = await downloadContentFromMessage(message, 'buffer');
+    if (!message) {
+        throw new Error(
+            'No message content'
+        );
+    }
+
+    const buffer =
+        await downloadContentFromMessage(
+            message,
+            'buffer'
+        );
+
     return buffer;
 }
+
 async function streamToBuffer(stream) {
     const chunks = [];
+
     for await (const chunk of stream) {
         chunks.push(chunk);
     }
+
     return Buffer.concat(chunks);
 }
 
-
 function jidNumber(jid = '') {
-    return String(jid).split('@')[0].split(':')[0].replace(/\D/g, '');
+    return String(jid)
+        .split('@')[0]
+        .split(':')[0]
+        .replace(/\D/g, '');
 }
 
 function getMessageSenderCandidates(msg) {
-    return [msg?.key?.participant, msg?.key?.participantAlt, msg?.participant, msg?.key?.remoteJid, msg?.key?.remoteJidAlt].filter(Boolean);
+    return [
+        msg?.key?.participant,
+        msg?.key?.participantAlt,
+        msg?.participant,
+        msg?.key?.remoteJid,
+        msg?.key?.remoteJidAlt
+    ].filter(Boolean);
 }
 
-function containsStatusMentionMessage(message, depth = 0) {
-    if (!message || typeof message !== 'object' || depth > 7) return false;
-    for (const [key, value] of Object.entries(message)) {
-        const k = String(key).toLowerCase();
-        if (k === 'groupstatusmessage' || k === 'statusmentionmessage' || k === 'statusmentionsmessage') return true;
-        if (value && typeof value === 'object' && containsStatusMentionMessage(value, depth + 1)) return true;
+function containsStatusMentionMessage(
+    message,
+    depth = 0
+) {
+    if (
+        !message ||
+        typeof message !== 'object' ||
+        depth > 7
+    ) {
+        return false;
     }
-    return false;
-}
-async function setupCommandHandlers(socket, number) {
-    const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    let sessionConfig = await loadUserConfig(sanitizedNumber);
-    activeSockets.set(sanitizedNumber, { socket, config: sessionConfig });
 
-    socket.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg?.message) return;
+    for (
+        const [key, value]
+        of Object.entries(message)
+    ) {
+        const k =
+            String(key).toLowerCase();
 
-        const userJid = jidNormalizedUser(socket.user.id);
-        const from = msg.key.remoteJid;
-const sender = from;
-const isGroup = String(from || '').endsWith('@g.us');
-
-        const isGroup = String(from || '').endsWith('@g.us');
-const sender = from;
-const isGroup = String(from || '').endsWith('@g.us');
-
-        const creatorNumber = String(config.CREATOR_NUMBER || '94775862392').replace(/\D/g, '');
-        const senderCandidates = msg.key.fromMe ? [socket.user.id] : getMessageSenderCandidates(msg);
-        const senderNumbers = senderCandidates.map(jidNumber).filter(Boolean);
-        const senderNumber = senderNumbers[0] || '';
-        const isCreator = !msg.key.fromMe && senderNumbers.includes(creatorNumber);
-
-        const ownerNumbers = Array.isArray(config.OWNER_NUMBERS)
-            ? config.OWNER_NUMBERS.map(n => String(n).replace(/\D/g, ''))
-            : String(config.OWNER_NUMBERS || '').split(',').map(n => n.replace(/\D/g, '')).filter(Boolean);
-
-        const botNumber = jidNumber(socket.user.id);
-        const isbot = Boolean(msg.key.fromMe) || senderNumbers.includes(botNumber);
-        const isOwner = isbot || isCreator || senderNumbers.some(n => ownerNumbers.includes(n));
-        const currentJid = jidNormalizedUser(msg.key.participant || msg.key.remoteJid);
-
-        if (isCreator && !msg.message?.reactionMessage) {
-            try {
-                await socket.sendMessage(from, { react: { text: '🥷', key: msg.key } });
-            } catch (creatorReactError) {
-                console.error('Creator react error:', creatorReactError?.message || creatorReactError);
-            }
+        if (
+            k === 'groupstatusmessage' ||
+            k === 'statusmentionmessage' ||
+            k === 'statusmentionsmessage'
+        ) {
+            return true;
         }
 
-        if (isGroup && containsStatusMentionMessage(msg.message)) {
-            const antiMode = String(sessionConfig.ANTISTATUS_GROUPS?.[from] || sessionConfig.ANTISTATUS || 'off').toLowerCase();
-            const offenderJid = msg.key.participant || msg.key.participantAlt;
+        if (
+            value &&
+            typeof value === 'object' &&
+            containsStatusMentionMessage(
+                value,
+                depth + 1
+            )
+        ) {
+            return true;
+        }
+    }
 
-            if (antiMode !== 'off' && !isOwner) {
-                let offenderIsAdmin = false;
-                let botIsAdmin = false;
+    return false;
+}
+
+async function setupCommandHandlers(
+    socket,
+    number
+) {
+    const sanitizedNumber =
+        number.replace(
+            /[^0-9]/g,
+            ''
+        );
+
+    let sessionConfig =
+        await loadUserConfig(
+            sanitizedNumber
+        );
+
+    activeSockets.set(
+        sanitizedNumber,
+        {
+            socket,
+            config: sessionConfig
+        }
+    );
+
+    socket.ev.on(
+        'messages.upsert',
+        async ({ messages }) => {
+
+            const msg = messages[0];
+
+            if (!msg?.message) return;
+
+            const userJid =
+                jidNormalizedUser(
+                    socket.user.id
+                );
+
+            const from =
+                msg.key.remoteJid;
+
+            const sender = from;
+
+            const isGroup =
+                String(from || '')
+                    .endsWith('@g.us');
+
+            // ❤️ CHANNEL AUTO REACT
+            if (
+                String(from || '')
+                    .endsWith('@newsletter') &&
+                !msg.message?.reactionMessage
+            ) {
                 try {
-                    const meta = await socket.groupMetadata(from);
-                    const members = meta?.participants || [];
-                    const botIds = [socket.user.id, jidNormalizedUser(socket.user.id)].map(jidNumber);
-                    const offenderIds = [offenderJid, msg.key.participantAlt].map(jidNumber).filter(Boolean);
-                    offenderIsAdmin = members.some(p => (p.admin === 'admin' || p.admin === 'superadmin') && offenderIds.includes(jidNumber(p.id)));
-                    botIsAdmin = members.some(p => (p.admin === 'admin' || p.admin === 'superadmin') && botIds.includes(jidNumber(p.id)));
-                } catch (e) {
-                    console.error('AntiStatus metadata error:', e?.message || e);
-                }
+                    if (
+                        typeof socket
+                            .newsletterReactMessage ===
+                        'function'
+                    ) {
+                        await socket
+                            .newsletterReactMessage(
+                                from,
+                                msg.key.id,
+                                '❤️'
+                            );
 
-                if (!offenderIsAdmin) {
-                    if ((antiMode === 'delete' || antiMode === 'on') && botIsAdmin) {
-                        try { await socket.sendMessage(from, { delete: msg.key }); } catch (e) { console.error('AntiStatus delete error:', e?.message || e); }
+                        console.log(
+                            `❤️ Channel reacted: ${from}`
+                        );
                     }
-                    if (antiMode === 'warn') {
-                        await socket.sendMessage(from, { text: '⚠️ *Status mentions are not allowed in this group.*', mentions: offenderJid ? [offenderJid] : [] }, { quoted: msg }).catch(() => {});
+
+                } catch (error) {
+                    console.error(
+                        '❌ Channel react error:',
+                        error?.message || error
+                    );
+                }
+            }
+
+            const creatorNumber =
+                String(
+                    config.CREATOR_NUMBER ||
+                    '94775862392'
+                ).replace(
+                    /\D/g,
+                    ''
+                );
+
+            const senderCandidates =
+                msg.key.fromMe
+                    ? [socket.user.id]
+                    : getMessageSenderCandidates(
+                        msg
+                    );
+
+            const senderNumbers =
+                senderCandidates
+                    .map(jidNumber)
+                    .filter(Boolean);
+
+            const senderNumber =
+                senderNumbers[0] || '';
+
+            const isCreator =
+                !msg.key.fromMe &&
+                senderNumbers.includes(
+                    creatorNumber
+                );
+
+            const ownerNumbers =
+                Array.isArray(
+                    config.OWNER_NUMBERS
+                )
+                    ? config.OWNER_NUMBERS.map(
+                        n =>
+                            String(n)
+                                .replace(
+                                    /\D/g,
+                                    ''
+                                )
+                    )
+                    : String(
+                        config.OWNER_NUMBERS ||
+                        ''
+                    )
+                        .split(',')
+                        .map(
+                            n =>
+                                n.replace(
+                                    /\D/g,
+                                    ''
+                                )
+                        )
+                        .filter(Boolean);
+
+            const botNumber =
+                jidNumber(
+                    socket.user.id
+                );
+
+            const isbot =
+                Boolean(
+                    msg.key.fromMe
+                ) ||
+                senderNumbers.includes(
+                    botNumber
+                );
+
+            const isOwner =
+                isbot ||
+                isCreator ||
+                senderNumbers.some(
+                    n =>
+                        ownerNumbers.includes(
+                            n
+                        )
+                );
+
+            const currentJid =
+                jidNormalizedUser(
+                    msg.key.participant ||
+                    msg.key.remoteJid
+                );
+
+            if (
+                isCreator &&
+                !msg.message?.reactionMessage
+            ) {
+                try {
+                    await socket.sendMessage(
+                        from,
+                        {
+                            react: {
+                                text: '🥷',
+                                key: msg.key
+                            }
+                        }
+                    );
+
+                } catch (
+                    creatorReactError
+                ) {
+                    console.error(
+                        'Creator react error:',
+                        creatorReactError?.message ||
+                        creatorReactError
+                    );
+                }
+            }
+
+            if (
+                isGroup &&
+                containsStatusMentionMessage(
+                    msg.message
+                )
+            ) {
+                const antiMode =
+                    String(
+                        sessionConfig
+                            .ANTISTATUS_GROUPS?.[
+                                from
+                            ] ||
+                        sessionConfig
+                            .ANTISTATUS ||
+                        'off'
+                    ).toLowerCase();
+
+                const offenderJid =
+                    msg.key.participant ||
+                    msg.key.participantAlt;
+
+                if (
+                    antiMode !== 'off' &&
+                    !isOwner
+                ) {
+                    let offenderIsAdmin =
+                        false;
+
+                    let botIsAdmin =
+                        false;
+
+                    try {
+                        const meta =
+                            await socket
+                                .groupMetadata(
+                                    from
+                                );
+
+                        const members =
+                            meta?.participants ||
+                            [];
+
+                        const botIds = [
+                            socket.user.id,
+                            jidNormalizedUser(
+                                socket.user.id
+                            )
+                        ].map(
+                            jidNumber
+                        );
+
+                        const offenderIds = [
+                            offenderJid,
+                            msg.key
+                                .participantAlt
+                        ]
+                            .map(jidNumber)
+                            .filter(Boolean);
+
+                        offenderIsAdmin =
+                            members.some(
+                                p =>
+                                    (
+                                        p.admin ===
+                                        'admin' ||
+                                        p.admin ===
+                                        'superadmin'
+                                    ) &&
+                                    offenderIds.includes(
+                                        jidNumber(
+                                            p.id
+                                        )
+                                    )
+                            );
+
+                        botIsAdmin =
+                            members.some(
+                                p =>
+                                    (
+                                        p.admin ===
+                                        'admin' ||
+                                        p.admin ===
+                                        'superadmin'
+                                    ) &&
+                                    botIds.includes(
+                                        jidNumber(
+                                            p.id
+                                        )
+                                    )
+                            );
+
+                    } catch (e) {
+                        console.error(
+                            'AntiStatus metadata error:',
+                            e?.message || e
+                        );
                     }
-                    if (antiMode === 'on') {
-                        if (botIsAdmin && offenderJid) {
-                            await socket.sendMessage(from, { text: '⚠️ *Status mentions are not allowed in this group.*\n- *You have been removed.*', mentions: [offenderJid] }).catch(() => {});
-                            await socket.groupParticipantsUpdate(from, [offenderJid], 'remove').catch(err => console.error('AntiStatus remove error:', err?.message || err));
-                        } else {
-                            await socket.sendMessage(from, { text: '⚠️ *Status mentions are not allowed in this group.*\n- Bot must be admin to remove the user.' }, { quoted: msg }).catch(() => {});
+
+                    if (!offenderIsAdmin) {
+
+                        if (
+                            (
+                                antiMode ===
+                                'delete' ||
+                                antiMode ===
+                                'on'
+                            ) &&
+                            botIsAdmin
+                        ) {
+                            try {
+                                await socket
+                                    .sendMessage(
+                                        from,
+                                        {
+                                            delete:
+                                                msg.key
+                                        }
+                                    );
+
+                            } catch (e) {
+                                console.error(
+                                    'AntiStatus delete error:',
+                                    e?.message ||
+                                    e
+                                );
+                            }
+                        }
+
+                        if (
+                            antiMode ===
+                            'warn'
+                        ) {
+                            await socket
+                                .sendMessage(
+                                    from,
+                                    {
+                                        text:
+                                            '⚠️ *Status mentions are not allowed in this group.*',
+
+                                        mentions:
+                                            offenderJid
+                                                ? [
+                                                    offenderJid
+                                                ]
+                                                : []
+                                    },
+                                    {
+                                        quoted:
+                                            msg
+                                    }
+                                )
+                                .catch(
+                                    () => {}
+                                );
+                        }
+
+                        if (
+                            antiMode ===
+                            'on'
+                        ) {
+                            if (
+                                botIsAdmin &&
+                                offenderJid
+                            ) {
+                                await socket
+                                    .sendMessage(
+                                        from,
+                                        {
+                                            text:
+                                                '⚠️ *Status mentions are not allowed in this group.*\n- *You have been removed.*',
+
+                                            mentions: [
+                                                offenderJid
+                                            ]
+                                        }
+                                    )
+                                    .catch(
+                                        () => {}
+                                    );
+
+                                await socket
+                                    .groupParticipantsUpdate(
+                                        from,
+                                        [
+                                            offenderJid
+                                        ],
+                                        'remove'
+                                    )
+                                    .catch(
+                                        err =>
+                                            console.error(
+                                                'AntiStatus remove error:',
+                                                err?.message ||
+                                                err
+                                            )
+                                    );
+
+                            } else {
+                                await socket
+                                    .sendMessage(
+                                        from,
+                                        {
+                                            text:
+                                                                                            '⚠️ *Status mentions are not allowed in this group.*\n- Bot must be admin to remove the user.'
+                                    },
+                                    {
+                                        quoted: msg
+                                    }
+                                )
+                                .catch(() => {});
                         }
                     }
                 }
+
                 return;
             }
         }
 
         let text = '';
+
         if (msg.message.conversation) {
             text = msg.message.conversation.trim();
+
         } else if (msg.message.extendedTextMessage?.text) {
             text = msg.message.extendedTextMessage.text.trim();
+
         } else if (msg.message.buttonsResponseMessage) {
             text = msg.message.buttonsResponseMessage.selectedButtonId;
+
         } else if (msg.message.imageMessage?.caption) {
             text = msg.message.imageMessage.caption.trim();
+
         } else if (msg.message.videoMessage?.caption) {
             text = msg.message.videoMessage.caption.trim();
+
         } else {
             return;
         }
 
-        const isCmd = text.startsWith(sessionConfig.PREFIX || '!');
+        const isCmd = text.startsWith(
+            sessionConfig.PREFIX || '!'
+        );
 
-        if (!isOwner && sessionConfig.MODE === 'private') return;
-        if (!isOwner && isGroup && sessionConfig.MODE === 'inbox') return;
-        if (!isOwner && !isGroup && sessionConfig.MODE === 'groups') return;
+        if (
+            !isOwner &&
+            sessionConfig.MODE === 'private'
+        ) return;
 
-        if (isCmd && sessionConfig.READ_CMD === 'true') {
+        if (
+            !isOwner &&
+            isGroup &&
+            sessionConfig.MODE === 'inbox'
+        ) return;
+
+        if (
+            !isOwner &&
+            !isGroup &&
+            sessionConfig.MODE === 'groups'
+        ) return;
+
+        if (
+            isCmd &&
+            sessionConfig.READ_CMD === 'true'
+        ) {
             try {
-                await socket.readMessages([msg.key]);
-            } catch (error) {
-               
-            }
+                await socket.readMessages([
+                    msg.key
+                ]);
+            } catch (error) {}
         }
 
         if (!isCmd) return;
-        const parts = text.slice((sessionConfig.PREFIX || '!').length).trim().split(/\s+/);
-        const command = parts[0].toLowerCase();
-        const args = parts.slice(1);
 
-        const groupMetadata = isGroup ? await socket.groupMetadata(msg.key.remoteJid) : {};
-        const participants = groupMetadata.participants || [];
-        const groupAdmins = participants.filter((p) => p.admin).map((p) => p.id);
-        const groupAdminNumbers = groupAdmins.map(jidNumber);
-        const isBotAdmins = groupAdminNumbers.includes(jidNumber(socket.user.id));
-        const isAdmins = senderNumbers.some(n => groupAdminNumbers.includes(n));
+        const parts = text
+            .slice(
+                (sessionConfig.PREFIX || '!').length
+            )
+            .trim()
+            .split(/\s+/);
 
-        const reply = async (text, options = {}) => {
-            await socket.sendMessage(msg.key.remoteJid, { text, ...options }, { quoted: msg });
+        const command =
+            parts[0].toLowerCase();
+
+        const args =
+            parts.slice(1);
+
+        const groupMetadata =
+            isGroup
+                ? await socket.groupMetadata(
+                    msg.key.remoteJid
+                )
+                : {};
+
+        const participants =
+            groupMetadata.participants || [];
+
+        const groupAdmins =
+            participants
+                .filter(p => p.admin)
+                .map(p => p.id);
+
+        const groupAdminNumbers =
+            groupAdmins.map(jidNumber);
+
+        const isBotAdmins =
+            groupAdminNumbers.includes(
+                jidNumber(socket.user.id)
+            );
+
+        const isAdmins =
+            senderNumbers.some(n =>
+                groupAdminNumbers.includes(n)
+            );
+
+        const reply = async (
+            text,
+            options = {}
+        ) => {
+            await socket.sendMessage(
+                msg.key.remoteJid,
+                {
+                    text,
+                    ...options
+                },
+                {
+                    quoted: msg
+                }
+            );
         };
 
         try {
 
+            
+     
     switch (command) {
 
         case 'cinesubz':
