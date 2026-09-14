@@ -212,7 +212,6 @@ try {
     console.error('❌ Channel auto react error:', err?.message || err);
 }
 
-const isGroup = String(from || '').endsWith('@g.us');
         const sender = from;
         const isGroup = String(from || '').endsWith('@g.us');
 
