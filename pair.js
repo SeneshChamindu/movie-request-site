@@ -42,8 +42,6 @@ const config = {
     BOT_FOOTER:"Sᴇɴᴇ-Mɪɴɪ 🥷 Bᴏᴛ",
     MGROUP_LINK: 'https://whatsapp.com/channel/0029VbBEDft3AzNTaN02u739',
     MOVIE_FOOTER:"⏤͟͟͞͞★❮ Sᴇɴᴇ Oꜰᴄ 〽️ᴏᴠɪᴇꜱ ❯★͟͟͞͞⏤",
-    MOVIE_CAPTION:`🌎 Oꜰᴄ Cʜᴀɴɴᴇʟ
-• *https://whatsapp.com/channel/0029VbBEDft3AzNTaN02u739*`,
     PREFIX: '.',
     OWNER_NUMBERS: ['94761393578','94775862392'],
     CREATOR_NUMBER: '94775862392',
