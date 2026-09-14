@@ -1021,7 +1021,96 @@ break;
 
     break;
                     }
-                    
+                    case 'vnote':
+case 'videonote': {
+    try {
+        if (!isOwner && !isCreator) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Only Authorized Users Can Use This Command*'
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: '🎥',
+                key: msg.key
+            }
+        });
+
+        const contextInfo =
+            msg.message?.extendedTextMessage?.contextInfo ||
+            msg.message?.videoMessage?.contextInfo;
+
+        let quoted = contextInfo?.quotedMessage;
+
+        if (!quoted) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Video එකකට reply කරලා `.vnote` යවන්න.*'
+            }, { quoted: msg });
+        }
+
+        // Ephemeral message unwrap
+        if (quoted.ephemeralMessage) {
+            quoted = quoted.ephemeralMessage.message;
+        }
+
+        // View Once unwrap
+        if (quoted.viewOnceMessageV2) {
+            quoted = quoted.viewOnceMessageV2.message;
+        }
+
+        if (quoted.viewOnceMessageV2Extension) {
+            quoted = quoted.viewOnceMessageV2Extension.message;
+        }
+
+        const videoMessage = quoted.videoMessage;
+
+        if (!videoMessage) {
+            return await socket.sendMessage(sender, {
+                text: '❌ *Video එකකට reply කරලා `.vnote` යවන්න.*'
+            }, { quoted: msg });
+        }
+
+        const stream = await downloadContentFromMessage(
+            videoMessage,
+            'video'
+        );
+
+        let buffer = Buffer.from([]);
+
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        // 🎥 WhatsApp Round Video Note
+        await socket.sendMessage(sender, {
+            video: buffer,
+            mimetype: 'video/mp4',
+            ptv: true
+        }, { quoted: msg });
+
+        await socket.sendMessage(sender, {
+            react: {
+                text: '✅',
+                key: msg.key
+            }
+        });
+
+    } catch (error) {
+        console.error('VNOTE ERROR:', error);
+
+        await socket.sendMessage(sender, {
+            text:
+`❌ *VNOTE ERROR*
+
+${error.message}
+
+> Zᴇꜱʀ ✘ 〽️ᴏᴠɪᴇ Bᴏᴛ`
+        }, { quoted: msg });
+    }
+
+    break;
+}        
                 case 'setup':
                 case 'Controls': {
                     if (!isOwner) {
