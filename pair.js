@@ -46,9 +46,7 @@ const config = {
 • *https://whatsapp.com/channel/0029VbBEDft3AzNTaN02u739*`,
     PREFIX: '.',
     OWNER_NUMBERS: ['94761393578','94775862392'],
-    CREATOR_NUMBER: '94775862392','94761393578'
-    ANTISTATUS: 'off',
-    ANTISTATUS_GROUPS: {},
+    CREATOR_NUMBER: '94775862392',
     BOT_NAME: "Sᴇɴᴇ-Mɪɴɪ 🥷 Bᴏᴛ",
     AIR_FOOTER: "Sᴇɴᴇ-Mɪɴɪ Bᴏᴛ ᴠ1.0.0",
     MODE: 'public',
