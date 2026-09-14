@@ -659,9 +659,7 @@ ${sessionConfig.BOT_FOOTER || config.BOT_FOOTER}`;
                                     jpegThumbnail: thumbBuffer,
                                     caption: formatMessage(
                                         `☘️ ${movieInfo.title}`,
-                                        `\`❚█${sessionConfig.MOVIE_CAPTION || config.MOVIE_CAPTION}█❚\`
-
-\`❪${qualityDisplay}❫\``,
+                                \`✨ Quality - ${qualityDisplay}`
                                         `${sessionConfig.MOVIE_FOOTER || config.MOVIE_FOOTER}`
                                     )
                                 }, { quoted: downloadMek });
@@ -1667,11 +1665,8 @@ _${error.message}_
     }
 
     break;
-        }
-/////////////Instagram///////////////
-
-
-  
+}
+    }
     ////////////////////////////////////////////////////////////////////         
           
         } catch (error) {
