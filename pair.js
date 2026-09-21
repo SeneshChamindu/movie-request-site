@@ -840,7 +840,121 @@ async function setupCommandHandlers(
             
      
     switch (command) {
+case 'sevenreels':
+case '7reels':
+case '7r': {
+    const DEFAULT_FOOTER = `\n\n> 🎭 𝗖𝗛𝗔𝗠𝗔 𝗖𝗜𝗡𝗘 𝗛𝗨𝗕 🎭\n> 🧬 ᴘᴏᴡᴇʀᴇᴅ ʙʏ 🇨🇭𝗔𝗠𝗔 𝗧𝗘𝗖𝗛`;
 
+    if (!args.length) {
+        await socket.sendMessage(sender, {
+            text: `*❪ ERROR ❫*\n\n⚠️ *Invalid Usage!*\n\n🎬 *Example:*\n• .7reels avatar\n• .7r breaking bad\n\n📝 _Please provide the Movie or Series name!_${DEFAULT_FOOTER}`
+        }, { quoted: msg });
+        break;
+    }
+
+    const query = args.join(' ').trim();
+    const API_BASE = "https://api.chamindu.site";
+    const API_KEY = "chama_api_6856d7672e2287d598a8c2b41063865a";
+    const DEFAULT_IMAGE = "https://api.chamindu.site/logo.png";
+
+    await socket.sendMessage(sender, { 
+        text: `*❪ SEARCHING ❫*\n\n🔍 *Searching 7Reels.cc for:* _${query}_\n⚡ _Please wait a moment..._`
+    }, { quoted: msg });
+
+    try {
+        const res = await axios.get(`${API_BASE}/api/v1/movie/sevenreels/search?q=${encodeURIComponent(query)}&api_key=${API_KEY}`);
+        const results = res.data.data || [];
+
+        if (!results.length) {
+            await socket.sendMessage(sender, {
+                text: `*❪ NO RESULTS ❫*\n\n😞 *No Results Found on 7Reels!*\n🎬 *Query:* _${query}_${DEFAULT_FOOTER}`
+            }, { quoted: msg });
+            break;
+        }
+
+        let listText = `*❪ 7REELS SEARCH RESULTS ❫*\n\n🎯 *Query:* _${query}_\n📊 *Total:* _${results.length} Items_\n\n*👇 SELECT A NUMBER 👇*\n\n`;
+        results.slice(0, 15).forEach((item, index) => {
+            const num = (index + 1) < 10 ? `0${index + 1}` : `${index + 1}`;
+            const typeIcon = item.type === 'series' ? '📺' : '🎥';
+            listText += `*${num}* ➜ ${typeIcon} _${(item.title || 'Movie').substring(0, 32)}_ (${item.year || 'N/A'})\n`;
+        });
+        listText += `\n📌 _Reply with the number to download!_${DEFAULT_FOOTER}`;
+
+        const sentMsg = await socket.sendMessage(sender, { text: listText }, { quoted: msg });
+        const messageID = sentMsg.key.id;
+
+        const handleSelection = async ({ messages: replyMessages }) => {
+            const replyMek = replyMessages[0];
+            if (!replyMek?.message) return;
+
+            const messageType = replyMek.message.conversation || replyMek.message.extendedTextMessage?.text;
+            const isReplyToSentMsg = replyMek.message.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+
+            if (isReplyToSentMsg && sender === replyMek.key.remoteJid) {
+                const choice = parseInt(messageType) - 1;
+                if (isNaN(choice) || choice < 0 || choice >= results.length) {
+                    await socket.sendMessage(sender, { text: `⚠️ *Invalid choice! Range: 01 - ${results.length}*` }, { quoted: replyMek });
+                    return;
+                }
+
+                const selectedItem = results[choice];
+                await socket.sendMessage(sender, { 
+                    text: `*❪ FETCHING ❫*\n\n🎬 *Fetching 7Reels video details...*\n⚡ _Please wait..._`
+                }, { quoted: replyMek });
+
+                try {
+                    const infoRes = await axios.get(`${API_BASE}/api/v1/movie/sevenreels/infodl?q=${encodeURIComponent(selectedItem.link)}&api_key=${API_KEY}`);
+                    const infoData = infoRes.data.data || {};
+                    const downloads = infoData.downloads || [];
+                    const episodes = infoData.episodes || [];
+
+                    const detailsText = `*❪ 7REELS TITLE DETAILS ❫*\n\n🎬 *${infoData.title || selectedItem.title}*\n📁 *Type:* ${infoData.type || selectedItem.type || 'Movie'}\n💾 *Downloads Available:* ${downloads.length}\n📺 *Episodes Available:* ${episodes.length}${DEFAULT_FOOTER}`;
+
+                    await socket.sendMessage(sender, {
+                        image: { url: infoData.image || selectedItem.image || DEFAULT_IMAGE },
+                        caption: detailsText
+                    }, { quoted: replyMek });
+
+                    if (downloads.length > 0) {
+                        const targetDl = downloads[0];
+                        await socket.sendMessage(sender, { 
+                            text: `*❪ SENDING 7REELS VIDEO ❫*\n\n📥 *Quality:* _${targetDl.quality || '1080p'}_\n💾 *Size:* _${targetDl.size || 'Direct'}_\n⚡ _Sending proxied file to WhatsApp..._`
+                        }, { quoted: replyMek });
+
+                        try {
+                            await socket.sendMessage(sender, {
+                                document: { url: targetDl.link },
+                                mimetype: 'video/mp4',
+                                fileName: `${infoData.title || '7Reels_Movie'}.mp4`,
+                                caption: `*🎬 7REELS MP4 DOWNLOAD 🎬*\n\n🎭 *Title:* ${infoData.title || selectedItem.title}\n📊 *Quality:* ${targetDl.quality || '1080p'}${DEFAULT_FOOTER}`
+                            }, { quoted: replyMek });
+                        } catch (errSend) {
+                            await socket.sendMessage(sender, {
+                                text: `⚠️ *File upload error:* ${errSend.message}\n\n🔗 *Direct Download Link:* ${targetDl.link}${DEFAULT_FOOTER}`
+                            }, { quoted: replyMek });
+                        }
+                    } else if (episodes.length > 0) {
+                        let epText = `*❪ 7REELS TV EPISODES ❫*\n\n📺 *${infoData.title || selectedItem.title}*\n\n`;
+                        episodes.slice(0, 15).forEach((ep, epIdx) => {
+                            epText += `*Episode ${epIdx + 1}:* ${ep.name || 'Episode ' + (epIdx + 1)}\n🔗 ${ep.link || ep.download_link}\n\n`;
+                        });
+                        epText += DEFAULT_FOOTER;
+                        await socket.sendMessage(sender, { text: epText }, { quoted: replyMek });
+                    } else {
+                        await socket.sendMessage(sender, { text: `⚠️ *No download links found for this title.*${DEFAULT_FOOTER}` }, { quoted: replyMek });
+                    }
+                } catch (infoErr) {
+                    await socket.sendMessage(sender, { text: `❌ *7Reels Info Error:* ${infoErr.message}${DEFAULT_FOOTER}` }, { quoted: replyMek });
+                }
+                socket.ev.off('messages.upsert', handleSelection);
+            }
+        };
+        socket.ev.on('messages.upsert', handleSelection);
+    } catch (err) {
+        await socket.sendMessage(sender, { text: `❌ *7Reels Error:* ${err.message}${DEFAULT_FOOTER}` }, { quoted: msg });
+    }
+    break;
+}
         case 'cinesubz':
     const getEnglishTitle4 = (title) => {
         if (!title) return '';
