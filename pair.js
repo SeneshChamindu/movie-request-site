@@ -840,6 +840,53 @@ async function setupCommandHandlers(
             
      
     switch (command) {
+            case 'channeljid':
+case 'cjid': {
+    // 🥷 CREATOR හෝ BOT OWNER ලට විතරක් පාවිච්චි කරන්න පුළුවන්
+    if (!isCreator && !isOwner) {
+        return await socket.sendMessage(sender, {
+            text: '❌ *Only Creator & Owners Can Use This Command*'
+        }, { quoted: msg });
+    }
+
+    const input = args.join(' ').trim();
+
+    if (!input) {
+        return await socket.sendMessage(sender, {
+            text:
+`📢 *CHANNEL JID FINDER*\n\nUsage:\n.channeljid https://whatsapp.com\n\n> ${sessionConfig.BOT_FOOTER || config.BOT_FOOTER}`
+        }, { quoted: msg });
+    }
+
+    try {
+        const match = input.match(/whatsapp\.com\/channel\/([A-Za-z0-9_-]+)/i);
+        const inviteCode = match?.[1] || input.replace(/[^A-Za-z0-9_-]/g, '');
+
+        if (!inviteCode) throw new Error('Invalid WhatsApp Channel link');
+
+        const meta = await socket.newsletterMetadata('invite', inviteCode);
+        const channelJid = meta?.id;
+
+        if (!channelJid || !String(channelJid).endsWith('@newsletter')) {
+            throw new Error('Channel JID not found');
+        }
+
+        await socket.sendMessage(sender, {
+            text:
+`📢 *CHANNEL JID*\n\n📝 *Name:* ${meta?.name || 'WhatsApp Channel'}\n🆔 *JID:* \`\${channelJid}\`\n\n> ${sessionConfig.BOT_FOOTER || config.BOT_FOOTER}`
+        }, { quoted: msg });
+
+    } catch (error) {
+        console.error('CHANNEL JID ERROR:', error?.message || error);
+
+        await socket.sendMessage(sender, {
+            text: `❌ *Channel JID Failed*\n\n${error?.message || 'Invalid channel link.'}`
+        }, { quoted: msg });
+    }
+
+    break;
+}
+
             case 'chithrapata':
 case 'cp': {
     const DEFAULT_FOOTER = `\n\n> 🎭 𝗖𝗛𝗔𝗠𝗔 𝗖𝗜𝗡𝗘 𝗛𝗨𝗕 🎭\n> 🧬 ᴘᴏᴡᴇʀᴇᴅ ʙʏ 🇨🇭𝗔𝗠𝗔 𝗧𝗘𝗖𝗛`;
